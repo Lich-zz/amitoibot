@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits, REST, Routes, PermissionsBitField } = require('discord.js');
+const { Client, GatewayIntentBits, REST, Routes, PermissionsBitField, ApplicationCommandOptionType } = require('discord.js');
 const moment = require('moment-timezone');
 require('dotenv').config();
 
@@ -14,11 +14,11 @@ const client = new Client({
 const activeChannels = new Map();
 const serverEvents = new Map();
 const bossesSchedule = [
-    { hour: 12, minute: 0 },
-    { hour: 15, minute: 0 },
-    { hour: 19, minute: 0 },
-    { hour: 21, minute: 0 },
-    { hour: 24, minute: 0 },
+    { hour: 13, minute: 0 },
+    { hour: 16, minute: 0 },
+    { hour: 20, minute: 0 },
+    { hour: 22, minute: 0 },
+    { hour: 01, minute: 0 },
 ];
 
 let currentNightStart = null;
@@ -106,9 +106,15 @@ client.once('ready', async () => {
                 {
                     name: 'time',
                     type: 3,
-                    description: 'Event time in HH:MM (24-hour format)',
+                    description: 'Event time in HH:MM (24-hour format) ( default timezone Europe/Kyiv GMT+1 )',
                     required: true,
-                }
+                },
+				{
+					name: 'timezone',
+					description: 'Select your timezone',
+					type: ApplicationCommandOptionType.String,
+					autocomplete: true
+				}
             ]
         },
         {
@@ -212,6 +218,22 @@ function checkSchedule() {
 
 // Command interaction handling
 client.on('interactionCreate', async interaction => {
+	if (interaction.isAutocomplete()) {
+		const focusedOption = interaction.options.getFocused(); // Get the user's input
+		const allTimezones = moment.tz.names(); // Retrieve all timezones
+
+		// Filter timezones based on whether they contain the user's input, case-insensitive
+		const filteredTimezones = allTimezones.filter(tz => tz.toLowerCase().includes(focusedOption.toLowerCase()));
+
+		// Return a maximum of 25 results (Discord's limit for autocomplete)
+		await interaction.respond(
+			filteredTimezones.slice(0, 25).map(timezone => ({
+				name: timezone,
+				value: timezone
+			}))
+		);
+	}
+	
     if (!interaction.isChatInputCommand()) return;
 
     const now = moment();
@@ -239,6 +261,7 @@ client.on('interactionCreate', async interaction => {
     if (interaction.commandName === 'addevent') {
         const eventMessage = interaction.options.getString('message');
         const eventTime = interaction.options.getString('time');
+		const eventTimeZone = interaction.options.getString('timezone') || 'Europe/Kyiv';
 
         const timeMatch = eventTime.match(/^([01]?\d|2[0-3]):([0-5]\d)$/);
         if (!timeMatch) {
@@ -246,8 +269,12 @@ client.on('interactionCreate', async interaction => {
             return;
         }
 
-        // Save event in GMT+1 regardless of user's timezone
-        const eventDateTime = moment.tz(`${eventTime}`, 'HH:mm', 'Europe/Kyiv');
+		if (!moment.tz.zone(eventTimeZone)) {
+			await interaction.reply('❌ Invalid timezone! Use a standard name, such as Europe/Kyiv or America/New_York.');
+			return;
+		}
+
+        const eventDateTime = moment.tz(`${eventTime}`, 'HH:mm', eventTimeZone);
 
         if (!serverEvents.has(interaction.channelId)) {
             serverEvents.set(interaction.channelId, []);
@@ -256,13 +283,11 @@ client.on('interactionCreate', async interaction => {
         const event = {
             message: eventMessage,
             time: eventDateTime,
-            timeZone: 'Europe/Kyiv', 
+            timeZone: eventTimeZone, 
         };
 
         serverEvents.get(interaction.channelId).push(event);
-        const userTimeZone = moment.tz.guess();
-		const eventTimeForUser = eventDateTime.clone().tz(userTimeZone);
-		await interaction.reply(`✅ Event "${eventMessage}" is scheduled at ${eventTimeForUser.format('HH:mm')} your local time (${userTimeZone}).`);
+		await interaction.reply(`✅ Event "${event.message}" scheduled at ${eventDateTime.format('HH:mm')} (${eventTimeZone}).`);
     }
 
     if (interaction.commandName === 'listevents') {
@@ -272,7 +297,7 @@ client.on('interactionCreate', async interaction => {
             return;
         }
 
-        const eventList = events.map(event => `- ${event.message} at ${moment.tz(event.time, event.timeZone).format('HH:mm')} (${event.timeZone})`).join('\n');
+       	const eventList = events.map(event => `- ${event.message} at <t:${moment.tz(event.time, event.timeZone).unix()}:F>`).join('\n');
         await interaction.reply(`📅 **Scheduled Events:**\n${eventList}`);
     }
 });
