@@ -2,13 +2,13 @@ const { Client, GatewayIntentBits, REST, Routes, PermissionsBitField } = require
 const moment = require('moment-timezone');
 require('dotenv').config();
 
-const client = new Client({ 
+const client = new Client({
     intents: [
-        GatewayIntentBits.Guilds, 
+        GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
         GatewayIntentBits.GuildMembers,
-    ] 
+    ]
 });
 
 const activeChannels = new Map();
@@ -48,14 +48,14 @@ function initializeNightCycle() {
 // Function to generate night schedule
 function getNightSchedule() {
     const schedule = [];
-    const cycleStart = moment("2024-11-06T13:30");
+    const cycleStart = moment.tz("2024-11-06T13:30", 'Europe/Paris'); 
 
     for (let i = 0; i < 24; i++) {
         const nightStart = cycleStart.clone().add(i * 2.5, 'hours');
         const nightEnd = nightStart.clone().add(30, 'minutes');
         schedule.push({ start: nightStart, end: nightEnd });
     }
-    
+
     return schedule;
 }
 
@@ -86,7 +86,7 @@ async function sendMessageToActiveChannels(messageContent, serverId) {
 // Define slash commands and their behavior
 client.once('ready', async () => {
     console.log(`Logged in as ${client.user.tag}!`);
-    
+
     // Define commands
     const commands = [
         {
@@ -116,12 +116,14 @@ client.once('ready', async () => {
             description: 'List all scheduled events.',
         }
     ];
-	 // Define permissions for commands (use .toString() to serialize the permission value)
+
+    // Define permissions for commands (use .toString() to serialize the permission value)
     const permissions = PermissionsBitField.Flags.ManageRoles.toString();
 
     // Add permissions to the command registration
     commands[1].default_member_permissions = permissions;
     const clientUserId = String(client.user.id); 
+
     // Register commands globally
     const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
     try {
@@ -244,8 +246,8 @@ client.on('interactionCreate', async interaction => {
             return;
         }
 
-        const userTimeZone = moment.tz.guess(true);
-        const eventDateTime = moment.tz(`${eventTime}`, 'HH:mm', userTimeZone);
+        // Save event in GMT+1 regardless of user's timezone
+        const eventDateTime = moment.tz(`${eventTime}`, 'HH:mm', 'Europe/Paris'); // GMT+1
 
         if (!serverEvents.has(interaction.channelId)) {
             serverEvents.set(interaction.channelId, []);
@@ -254,11 +256,11 @@ client.on('interactionCreate', async interaction => {
         const event = {
             message: eventMessage,
             time: eventDateTime,
-            timeZone: userTimeZone,
+            timeZone: 'Europe/Paris', // GMT+1
         };
 
         serverEvents.get(interaction.channelId).push(event);
-        await interaction.reply(`✅ Event "${event.message}" scheduled at ${eventDateTime.format('HH:mm')} (${userTimeZone}).`);
+        await interaction.reply(`✅ Event "${event.message}" scheduled at ${eventDateTime.format('HH:mm')} (GMT+1).`);
     }
 
     if (interaction.commandName === 'listevents') {
