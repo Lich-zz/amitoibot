@@ -48,7 +48,7 @@ function initializeNightCycle() {
 // Function to generate night schedule
 function getNightSchedule() {
     const schedule = [];
-    const cycleStart = moment.tz("2024-11-06T13:30", 'Europe/Paris'); 
+    const cycleStart = moment.tz("2024-11-06T14:30", 'Europe/Kyiv'); 
 
     for (let i = 0; i < 24; i++) {
         const nightStart = cycleStart.clone().add(i * 2.5, 'hours');
@@ -182,7 +182,7 @@ function checkSchedule() {
     // Check for events and notify
     serverEvents.forEach((events, serverId) => {
         events.forEach((event, index) => {
-            const eventTimeInUserTZ = moment.tz(event.time, 'Europe/Paris');
+            const eventTimeInUserTZ = moment.tz(event.time, 'Europe/Kyiv');
 
             // Notify 5 minutes before the event
             if (now.isSame(eventTimeInUserTZ.clone().subtract(5, 'minutes'), 'minute')) {
@@ -198,7 +198,7 @@ function checkSchedule() {
 
     // Boss appearance notifications
     bossesSchedule.forEach((boss) => {
-        const bossTime = moment.tz({ hour: boss.hour, minute: boss.minute }, 'Europe/Paris');
+        const bossTime = moment.tz({ hour: boss.hour, minute: boss.minute }, 'Europe/Kyiv');
 
         if (now.isSame(bossTime.clone().subtract(5, 'minutes'), 'minute')) {
             sendMessageToActiveChannels(`⏰ **Bosses will appear in 5 minutes!** Prepare!`);
@@ -247,7 +247,7 @@ client.on('interactionCreate', async interaction => {
         }
 
         // Save event in GMT+1 regardless of user's timezone
-        const eventDateTime = moment.tz(`${eventTime}`, 'HH:mm', 'Europe/Paris'); // GMT+1
+        const eventDateTime = moment.tz(`${eventTime}`, 'HH:mm', 'Europe/Kyiv');
 
         if (!serverEvents.has(interaction.channelId)) {
             serverEvents.set(interaction.channelId, []);
@@ -256,11 +256,13 @@ client.on('interactionCreate', async interaction => {
         const event = {
             message: eventMessage,
             time: eventDateTime,
-            timeZone: 'Europe/Paris', // GMT+1
+            timeZone: 'Europe/Kyiv', 
         };
 
         serverEvents.get(interaction.channelId).push(event);
-        await interaction.reply(`✅ Event "${event.message}" scheduled at ${eventDateTime.format('HH:mm')} (GMT+1).`);
+        const userTimeZone = moment.tz.guess();
+		const eventTimeForUser = eventDateTime.clone().tz(userTimeZone);
+		await interaction.reply(`✅ Event "${eventMessage}" is scheduled at ${eventTimeForUser.format('HH:mm')} your local time (${userTimeZone}).`);
     }
 
     if (interaction.commandName === 'listevents') {
