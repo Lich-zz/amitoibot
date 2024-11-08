@@ -27,7 +27,7 @@ let currentNightEnd = null;
 // Function to set up night intervals
 function initializeNightCycle() {
     const nightSchedule = getNightSchedule();
-    const now = moment();
+    const now = moment.tz('Europe/Kyiv');
 
     for (const night of nightSchedule) {
         if (night.start.isAfter(now)) {
@@ -158,7 +158,7 @@ client.once('ready', async () => {
 
 // Function to check schedule and send notifications
 function checkSchedule() {
-    const now = moment();
+    const now = moment.tz('Europe/Kyiv');
 
     // Notify 5 minutes before night starts
     if (now.isSame(currentNightStart.clone().subtract(5, 'minutes'), 'minute')) {
@@ -236,7 +236,7 @@ client.on('interactionCreate', async interaction => {
 	
     if (!interaction.isChatInputCommand()) return;
 
-    const now = moment();
+    const now = moment.tz('Europe/Kyiv');
     const nightSchedule = getNightSchedule();
 
     if (interaction.commandName === 'night') {
