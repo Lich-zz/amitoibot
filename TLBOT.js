@@ -182,7 +182,7 @@ function checkSchedule() {
     // Check for events and notify
     serverEvents.forEach((events, serverId) => {
         events.forEach((event, index) => {
-            const eventTimeInUserTZ = moment.tz(event.time, moment.tz.guess());
+            const eventTimeInUserTZ = moment.tz(event.time, 'Europe/Paris');
 
             // Notify 5 minutes before the event
             if (now.isSame(eventTimeInUserTZ.clone().subtract(5, 'minutes'), 'minute')) {
@@ -190,7 +190,7 @@ function checkSchedule() {
             }
 
             if (now.isSame(eventTimeInUserTZ, 'minute')) {
-                sendMessageToActiveChannels(`🔔 **Event Reminder**: "${event.message}" is scheduled at "${eventTimeInUserTZ.format('HH:mm')}" your time.`, serverId);
+                sendMessageToActiveChannels(`🔔 **Event Reminder**: "${event.message}" is scheduled at "${eventTimeInUserTZ.format('HH:mm')}" 'Europe/Paris'.`, serverId);
                 serverEvents.get(serverId).splice(index, 1);
             }
         });
