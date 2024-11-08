@@ -186,11 +186,11 @@ function checkSchedule() {
 
             // Notify 5 minutes before the event
             if (now.isSame(eventTimeInUserTZ.clone().subtract(5, 'minutes'), 'minute')) {
-                sendMessageToActiveChannels(`🔔 **Event Reminder**: "${event.message}" will start in 5 minutes!`, serverId);
+                sendMessageToActiveChannels(`🔔 "${event.message}" will start in 5 minutes!`, serverId);
             }
 
             if (now.isSame(eventTimeInUserTZ, 'minute')) {
-                sendMessageToActiveChannels(`🔔 **Event Reminder**: "${event.message}" is scheduled at "${eventTimeInUserTZ.format('HH:mm')}" 'Europe/Paris'.`, serverId);
+                sendMessageToActiveChannels(`🔔 "${event.message}" Starting Now!`, serverId);
                 serverEvents.get(serverId).splice(index, 1);
             }
         });
@@ -198,7 +198,7 @@ function checkSchedule() {
 
     // Boss appearance notifications
     bossesSchedule.forEach((boss) => {
-        const bossTime = moment().hours(boss.hour).minutes(boss.minute);
+        const bossTime = moment.tz({ hour: boss.hour, minute: boss.minute }, 'Europe/Paris');
 
         if (now.isSame(bossTime.clone().subtract(5, 'minutes'), 'minute')) {
             sendMessageToActiveChannels(`⏰ **Bosses will appear in 5 minutes!** Prepare!`);
