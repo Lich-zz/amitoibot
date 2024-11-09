@@ -45,15 +45,24 @@ function initializeNightCycle() {
     currentNightEnd = currentNightStart.clone().add(30, 'minutes');
 }
 
-// Function to generate night schedule
 function getNightSchedule() {
     const schedule = [];
-    const cycleStart = moment.tz("2024-11-06T14:30", 'Europe/Kyiv'); 
+    const now = moment.tz('Europe/Kyiv');  // Поточний час у потрібній таймзоні
+    const cycleStart = moment.tz("2024-11-06T14:30", 'Europe/Kyiv');  // Початок початкового циклу
 
+    // Зсув, який допоможе знайти найближчий нічний інтервал
+    let nightStart = cycleStart;
+
+    // Знаходимо найближчий початок ночі, що ще не минув
+    while (nightStart.isBefore(now)) {
+        nightStart.add(2.5, 'hours'); // Кожна ніч розпочинається через 2.5 години від попередньої
+    }
+
+    // Додаємо 24 майбутні нічні інтервали
     for (let i = 0; i < 24; i++) {
-        const nightStart = cycleStart.clone().add(i * 2.5, 'hours');
-        const nightEnd = nightStart.clone().add(30, 'minutes');
-        schedule.push({ start: nightStart, end: nightEnd });
+        const nightEnd = nightStart.clone().add(30, 'minutes'); // Ніч триває 30 хвилин
+        schedule.push({ start: nightStart.clone(), end: nightEnd });
+        nightStart.add(2.5, 'hours'); // Переходимо до наступної ночі
     }
 
     return schedule;
