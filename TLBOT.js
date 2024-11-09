@@ -149,7 +149,7 @@ client.once('ready', async () => {
     }
 
     // Initialize active channels
-    client.guilds.cache.forEach(guild => {
+   /* client.guilds.cache.forEach(guild => {
         const channels = [];
         guild.channels.cache.forEach(channel => {
             if (
@@ -163,6 +163,116 @@ client.once('ready', async () => {
             }
         });
     });
+	*/
+});
+
+// Ініціалізація активних каналів при запуску бота
+function initializeActiveChannels() {
+    client.guilds.cache.forEach(guild => {
+        const channels = [];
+        guild.channels.cache.forEach(channel => {
+            if (
+                channel.isTextBased() &&
+                channel.members.has(client.user.id) &&
+                channel.permissionsFor(guild.members.me).has('SendMessages')
+            ) {
+                channels.push(channel.id);
+                console.log(`Active channel set to: ${channel.name} in guild: ${guild.name}`);
+            }
+        });
+        if (channels.length > 0) {
+            activeChannels.set(guild.id, channels);
+        }
+    });
+}
+
+// Виклик функції ініціалізації під час запуску бота
+client.once('ready', () => {
+    console.log(`Logged in as ${client.user.tag}!`);
+    initializeActiveChannels();
+});
+
+// Оновлення activeChannels при додаванні бота до нової гільдії
+client.on('guildCreate', guild => {
+	cosole.log('qweqwe');
+  initializeActiveChannels();
+});
+
+// Видалення запису з activeChannels при видаленні гільдії
+client.on('guildDelete', guild => {
+    if (activeChannels.has(guild.id)) {
+        activeChannels.delete(guild.id);
+        console.log(`Removed guild from active channels: ${guild.name}`);
+    }
+});
+
+client.on('channelUpdate', (oldChannel, newChannel) => {
+    if (newChannel.isTextBased() && newChannel.guild) {
+        const guildId = newChannel.guild.id;
+        
+        // Перевірка, чи бот має дозволи на надсилання повідомлень у новому каналі
+        const botHasPermission = newChannel.permissionsFor(newChannel.guild.members.me).has('SendMessages');
+        const isInActiveChannels = activeChannels.has(guildId) && activeChannels.get(guildId).includes(newChannel.id);
+
+        if (botHasPermission && !isInActiveChannels) {
+            // Додаємо канал до активних, якщо бот отримав дозволи
+            if (!activeChannels.has(guildId)) activeChannels.set(guildId, []);
+            activeChannels.get(guildId).push(newChannel.id);
+            console.log(`Bot was added to active channel: ${newChannel.name} in guild: ${newChannel.guild.name}`);
+        } else if (!botHasPermission && isInActiveChannels) {
+            // Видаляємо канал з активних, якщо бот втратив дозволи
+            const channels = activeChannels.get(guildId).filter(id => id !== newChannel.id);
+            if (channels.length === 0) activeChannels.delete(guildId);
+            else activeChannels.set(guildId, channels);
+            console.log(`Bot was removed from active channel: ${newChannel.name} in guild: ${newChannel.guild.name}`);
+        }
+    }
+});
+
+// Оновлення активних каналів, якщо гільдія була змінена
+client.on('guildUpdate', (oldGuild, newGuild) => {
+    const guildId = newGuild.id;
+    const channels = [];
+
+    newGuild.channels.cache.forEach(channel => {
+        if (
+            channel.isTextBased() &&
+            channel.permissionsFor(newGuild.members.me).has('SendMessages')
+        ) {
+            channels.push(channel.id);
+        }
+    });
+
+    if (channels.length > 0) {
+        activeChannels.set(guildId, channels);
+        console.log(`Updated active channels for guild: ${newGuild.name}`);
+    } else if (activeChannels.has(guildId)) {
+        activeChannels.delete(guildId);
+        console.log(`Removed all active channels for guild: ${newGuild.name}`);
+    }
+});
+
+// Додавання нового каналу в activeChannels, якщо бот має відповідні дозволи
+client.on('channelCreate', channel => {
+    initializeActiveChannels();
+});
+
+// Видалення каналу з activeChannels, якщо він був видалений
+client.on('channelDelete', channel => {
+    if (channel.isTextBased() && channel.guild && activeChannels.has(channel.guild.id)) {
+        const guildChannels = activeChannels.get(channel.guild.id);
+        const channelIndex = guildChannels.indexOf(channel.id);
+        
+        if (channelIndex !== -1) {
+            guildChannels.splice(channelIndex, 1);
+            console.log(`Removed channel: ${channel.name} from guild: ${channel.guild.name}`);
+            
+            // Якщо немає активних каналів у гільдії, видаляємо запис для гільдії
+            if (guildChannels.length === 0) {
+                activeChannels.delete(channel.guild.id);
+            }
+        }
+    }
 });
 
 // Function to check schedule and send notifications
@@ -296,6 +406,7 @@ client.on('interactionCreate', async interaction => {
         };
 
         serverEvents.get(interaction.channelId).push(event);
+		sendMessageToActiveChannels(`✅ Event "${event.message}" scheduled at ${eventDateTime.format('HH:mm')} (${eventTimeZone}).`, interaction.channelId);
 		await interaction.reply(`✅ Event "${event.message}" scheduled at ${eventDateTime.format('HH:mm')} (${eventTimeZone}).`);
     }
 
