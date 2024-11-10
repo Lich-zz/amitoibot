@@ -18,7 +18,7 @@ const bossesSchedule = [
     { hour: 16, minute: 0 },
     { hour: 20, minute: 0 },
     { hour: 22, minute: 0 },
-    { hour: 01, minute: 0 },
+    { hour: 1, minute: 0 },
 ];
 
 let currentNightStart = null;
