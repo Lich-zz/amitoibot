@@ -13,6 +13,7 @@ const client = new Client({
 
 const activeChannels = new Map();
 const serverEvents = new Map();
+const activeUserTimers = new Map();
 const bossesSchedule = [
     { hour: 1, minute: 0 },
     { hour: 13, minute: 0 },
@@ -129,6 +130,28 @@ client.once('ready', async () => {
         {
             name: 'listevents',
             description: 'List all scheduled events.',
+        },
+		{
+		 name: 'runamitoy',
+            description: 'Set up an alert for the specified interval.',
+            options: [
+                {
+                    name: 'hours',
+                    type: 4, // INTEGER тип
+                    description: 'Set the alert interval (1, 2, 4, or 8 hours)',
+                    required: true,
+                    choices: [
+                        { name: '1 hour', value: 1 },
+                        { name: '2 hours', value: 2 },
+                        { name: '4 hours', value: 4 },
+                        { name: '8 hours', value: 8 }
+                    ]
+                }
+            ]
+		},
+		{
+            name: 'getamitoy',
+            description: 'Get amitoy expedition time',
         }
     ];
 
@@ -357,6 +380,48 @@ client.on('interactionCreate', async interaction => {
 
     const now = moment.tz('Europe/Kyiv');
     const nightSchedule = getNightSchedule();
+	
+	if (interaction.commandName === 'runamitoy') {
+        const hours = interaction.options.getInteger('hours');
+        const intervalMs = hours * 60 * 60 * 1000; // Перетворюємо години в мілісекунди
+        const userId = interaction.user.id;
+
+        if (activeUserTimers.has(userId)) {
+            clearTimeout(activeUserTimers.get(userId));
+        }
+        const timer = setTimeout(async () => {
+            try {
+                await interaction.reply({content: `⏰ **Reminder!** Your ${hours}-hour Amitoy expedition ended!`, ephemeral: true });
+            } catch (error) {
+                console.error(`Failed to send DM to user ${interaction.user.tag}: ${error.message}`);
+            }
+            activeUserTimers.delete(userId);
+        }, intervalMs);
+        activeUserTimers.set(userId, timer);
+        await interaction.reply({ content: `✅ Alert set for ${hours} hour(s)!`, ephemeral: true });
+    }
+	
+	if (interaction.commandName === 'getamitoy') {
+        const userId = interaction.user.id;
+
+        if (activeUserTimers.has(userId)) {
+            const { endTime } = activeUserTimers.get(userId);
+            const timeLeft = moment.duration(endTime.diff(moment()));
+            const hours = timeLeft.hours();
+            const minutes = timeLeft.minutes();
+            const seconds = timeLeft.seconds();
+
+            await interaction.reply({
+                content: `⏳ Time remaining: **${hours}h ${minutes}m ${seconds}s**`,
+                ephemeral: true
+            });
+        } else {
+            await interaction.reply({
+                content: `🚫 No active timer found for you.`,
+                ephemeral: true
+            });
+        }
+    }
 
     if (interaction.commandName === 'night') {
         const currentNight = nightSchedule.find(night => night.start.isBefore(now) && night.end.isAfter(now));
