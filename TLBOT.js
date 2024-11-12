@@ -14,11 +14,11 @@ const client = new Client({
 const activeChannels = new Map();
 const serverEvents = new Map();
 const bossesSchedule = [
+    { hour: 1, minute: 0 },
     { hour: 13, minute: 0 },
     { hour: 16, minute: 0 },
     { hour: 20, minute: 0 },
-    { hour: 22, minute: 0 },
-    { hour: 1, minute: 0 },
+    { hour: 22, minute: 0 }
 ];
 
 let currentNightStart = null;
