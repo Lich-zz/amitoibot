@@ -354,10 +354,7 @@ function checkSchedule() {
     // Boss appearance notifications
     bossesSchedule.forEach((boss) => {
         const bossTime = moment.tz({ hour: boss.hour, minute: boss.minute }, 'Europe/Kyiv');
-		if (boss.hour === 1) {
-			console.log(bossTime);
-			console.log(now);
-		}
+		
         if (now.isSame(bossTime.clone().subtract(5, 'minutes'), 'minute')) {
             sendMessageToActiveChannels(`⏰ **Bosses will appear in 5 minutes!** Prepare!`);
         }
