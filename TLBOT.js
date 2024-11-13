@@ -360,7 +360,12 @@ function checkSchedule() {
 
     // Boss appearance notifications
     bossesSchedule.forEach((boss) => {
-        const bossTime = moment.tz({ hour: boss.hour, minute: boss.minute }, 'Europe/Kyiv');
+        let bossTime = moment.tz({ hour: boss.hour, minute: boss.minute }, 'Europe/Kyiv');
+		
+		// Якщо час боса вже пройшов сьогодні, переносимо його на наступний день
+		if (bossTime.isBefore(now)) {
+			bossTime = bossTime.add(1, 'day'); // переносимо на наступний день
+		}
 		
         if (now.isSame(bossTime.clone().subtract(5, 'minutes'), 'minute')) {
             sendMessageToActiveChannels(`⏰ **Bosses will appear in 5 minutes!** Prepare!`);
