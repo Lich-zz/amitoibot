@@ -166,9 +166,9 @@ client.once('ready', async () => {
     const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
     try {
 		const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
-		const commands = await rest.get(Routes.applicationCommands(clientUserId));
-		console.log(commands);
-		for (const command of commands) {
+		const commandsToDelete = await rest.get(Routes.applicationCommands(clientUserId));
+		console.log(commandsToDelete);
+		for (const command of commandsToDelete) {
 			await rest.delete(Routes.applicationCommand(clientUserId, command.id));
 		}
 		console.log('All commands deleted.');
