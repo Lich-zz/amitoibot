@@ -407,7 +407,7 @@ client.on('interactionCreate', async interaction => {
 		// Створюємо новий таймер
 		const timer = setTimeout(async () => {
 			try {
-				await interaction.followUp({ content: `⏰ **Reminder!** Your ${hours}-hour Amitoy expedition ended!`, ephemeral: true });
+				await interaction.user.send(`⏰ **Reminder!** Your ${hours}-hour Amitoy expedition ended!`);
 			} catch (error) {
 				console.error(`Failed to send DM to user ${interaction.user.tag}: ${error.message}`);
 			}
