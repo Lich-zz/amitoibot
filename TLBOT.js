@@ -132,7 +132,7 @@ client.once('ready', async () => {
             description: 'List all scheduled events.',
         },
 		{
-		 name: 'runamitoy',
+		 name: 'runamitoi',
             description: 'Set up an alert for the specified interval.',
             options: [
                 {
@@ -150,7 +150,7 @@ client.once('ready', async () => {
             ]
 		},
 		{
-            name: 'getamitoy',
+            name: 'getamitoi',
             description: 'Get amitoy expedition time',
         }
     ];
@@ -165,14 +165,20 @@ client.once('ready', async () => {
     // Register commands globally
     const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
     try {
-		const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
+		/*const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
 		const commandsToDelete = await rest.get(Routes.applicationCommands(clientUserId));
 		console.log(commandsToDelete);
 		for (const command of commandsToDelete) {
 			await rest.delete(Routes.applicationCommand(clientUserId, command.id));
 		}
 		console.log('All commands deleted.');
-         await rest.put(Routes.applicationCommands(clientUserId), { body: commands });
+		console.log(commands);
+		*/
+		// Очищення всіх команд (видалення всіх зареєстрованих команд)
+      //  await rest.put(Routes.applicationCommands(clientUserId), { body: [] });
+
+        // Зареєструємо нові команди (масив команд для вашого бота)
+        await rest.put(Routes.applicationCommands(clientUserId), { body: commands });
         console.log('Slash commands registered.');
     } catch (error) {
         console.error(error);
@@ -224,7 +230,6 @@ client.once('ready', () => {
 
 // Оновлення activeChannels при додаванні бота до нової гільдії
 client.on('guildCreate', guild => {
-	cosole.log('qweqwe');
   initializeActiveChannels();
 });
 
@@ -388,47 +393,55 @@ client.on('interactionCreate', async interaction => {
     const now = moment.tz('Europe/Kyiv');
     const nightSchedule = getNightSchedule();
 	
-	if (interaction.commandName === 'runamitoy') {
-        const hours = interaction.options.getInteger('hours');
-        const intervalMs = hours * 60 * 60 * 1000; // Перетворюємо години в мілісекунди
-        const userId = interaction.user.id;
+	if (interaction.commandName === 'runamitoi') {
+		const hours = interaction.options.getInteger('hours');
+		const intervalMs = hours * 60 * 60 * 1000; // Перетворюємо години в мілісекунди
+		const userId = interaction.user.id;
+		const endTime = moment().add(hours, 'hours'); // Час завершення у форматі moment
 
-        if (activeUserTimers.has(userId)) {
-            clearTimeout(activeUserTimers.get(userId));
-        }
-        const timer = setTimeout(async () => {
-            try {
-                await interaction.reply({content: `⏰ **Reminder!** Your ${hours}-hour Amitoy expedition ended!`, ephemeral: true });
-            } catch (error) {
-                console.error(`Failed to send DM to user ${interaction.user.tag}: ${error.message}`);
-            }
-            activeUserTimers.delete(userId);
-        }, intervalMs);
-        activeUserTimers.set(userId, timer);
-        await interaction.reply({ content: `✅ Alert set for ${hours} hour(s)!`, ephemeral: true });
-    }
-	
-	if (interaction.commandName === 'getamitoy') {
-        const userId = interaction.user.id;
+		// Очищаємо попередній таймер, якщо існує
+		if (activeUserTimers.has(userId)) {
+			clearTimeout(activeUserTimers.get(userId).timer);
+		}
 
-        if (activeUserTimers.has(userId)) {
-            const { endTime } = activeUserTimers.get(userId);
-            const timeLeft = moment.duration(endTime.diff(moment()));
-            const hours = timeLeft.hours();
-            const minutes = timeLeft.minutes();
-            const seconds = timeLeft.seconds();
+		// Створюємо новий таймер
+		const timer = setTimeout(async () => {
+			try {
+				await interaction.followUp({ content: `⏰ **Reminder!** Your ${hours}-hour Amitoy expedition ended!`, ephemeral: true });
+			} catch (error) {
+				console.error(`Failed to send DM to user ${interaction.user.tag}: ${error.message}`);
+			}
+			activeUserTimers.delete(userId);
+		}, intervalMs);
 
-            await interaction.reply({
-                content: `⏳ Time remaining: **${hours}h ${minutes}m ${seconds}s**`,
-                ephemeral: true
-            });
-        } else {
-            await interaction.reply({
-                content: `🚫 No active timer found for you.`,
-                ephemeral: true
-            });
-        }
-    }
+		// Зберігаємо таймер і час завершення
+		activeUserTimers.set(userId, { timer, endTime });
+
+		await interaction.reply({ content: `✅ Alert set for ${hours} hour(s)!`, ephemeral: true });
+	}
+
+	if (interaction.commandName === 'getamitoi') {
+		const userId = interaction.user.id;
+
+		if (activeUserTimers.has(userId)) {
+			const { endTime } = activeUserTimers.get(userId);
+			const timeLeft = moment.duration(endTime.diff(moment()));
+
+			const hours = timeLeft.hours();
+			const minutes = timeLeft.minutes();
+			const seconds = timeLeft.seconds();
+
+			await interaction.reply({
+				content: `⏳ Time remaining: **${hours}h ${minutes}m ${seconds}s**`,
+				ephemeral: true
+			});
+		} else {
+			await interaction.reply({
+				content: `🚫 No active timer found for you.`,
+				ephemeral: true
+			});
+		}
+	}
 
     if (interaction.commandName === 'night') {
         const currentNight = nightSchedule.find(night => night.start.isBefore(now) && night.end.isAfter(now));
