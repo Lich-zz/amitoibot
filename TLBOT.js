@@ -165,6 +165,13 @@ client.once('ready', async () => {
     // Register commands globally
     const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
     try {
+		const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
+		const commands = await rest.get(Routes.applicationCommands(clientUserId));
+		console.log(commands);
+		for (const command of commands) {
+			await rest.delete(Routes.applicationCommand(clientUserId, command.id));
+		}
+		console.log('All commands deleted.');
          await rest.put(Routes.applicationCommands(clientUserId), { body: commands });
         console.log('Slash commands registered.');
     } catch (error) {
@@ -347,7 +354,10 @@ function checkSchedule() {
     // Boss appearance notifications
     bossesSchedule.forEach((boss) => {
         const bossTime = moment.tz({ hour: boss.hour, minute: boss.minute }, 'Europe/Kyiv');
-
+		if (boss.hour === 1) {
+			console.log(bossTime);
+			console.log(now);
+		}
         if (now.isSame(bossTime.clone().subtract(5, 'minutes'), 'minute')) {
             sendMessageToActiveChannels(`⏰ **Bosses will appear in 5 minutes!** Prepare!`);
         }
@@ -434,6 +444,10 @@ client.on('interactionCreate', async interaction => {
             const minutesTillNight = nextNightStart.diff(now, 'minutes');
             const hours = Math.floor(minutesTillNight / 60);
             const minutes = minutesTillNight % 60;
+			if (minutes < 0) {
+				console.log(nextNightStart);
+				console.log(currentNight);
+			}
             const timeString = hours > 0 
                 ? `${hours} hour${hours > 1 ? 's' : ''} ${minutes > 0 ? `${minutes} minute${minutes > 1 ? 's' : ''}` : ''}` 
                 : `${minutes} minute${minutes > 1 ? 's' : ''}`;
