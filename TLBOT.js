@@ -177,8 +177,10 @@ client.once('ready', async () => {
 		// Очищення всіх команд (видалення всіх зареєстрованих команд)
         await rest.put(Routes.applicationCommands(clientUserId), { body: [] });
 
-        // Зареєструємо нові команди (масив команд для вашого бота)
-        await rest.put(Routes.applicationCommands(clientUserId), { body: commands });
+        setTimeout(async () => {
+			await rest.put(Routes.applicationCommands(clientUserId), { body: commands });
+			console.log('Slash commands registered.');
+		}, 3000);
         console.log('Slash commands registered.');
     } catch (error) {
         console.error(error);
