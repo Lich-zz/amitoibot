@@ -15,11 +15,11 @@ const activeChannels = new Map();
 const serverEvents = new Map();
 const activeUserTimers = new Map();
 const bossesSchedule = [
-    { hour: 1, minute: 0 },
-    { hour: 13, minute: 0 },
-    { hour: 16, minute: 0 },
-    { hour: 20, minute: 0 },
-    { hour: 22, minute: 0 }
+    { hour: 2, minute: 0 },
+    { hour: 14, minute: 0 },
+    { hour: 17, minute: 0 },
+    { hour: 21, minute: 0 },
+    { hour: 23, minute: 0 }
 ];
 
 let currentNightStart = null;
