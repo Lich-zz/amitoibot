@@ -49,7 +49,7 @@ function initializeNightCycle() {
 function getNightSchedule() {
     const schedule = [];
     const now = moment.tz('Europe/Kyiv');
-    const cycleStart = moment.tz("2024-11-06T15:30", 'Europe/Kyiv');  // Початок початкового циклу
+    const cycleStart = moment.tz("2024-11-06T16:00", 'Europe/Kyiv');  // Початок початкового циклу
 
     // Зсув, який допоможе знайти найближчий нічний інтервал
     let nightStart = cycleStart;
