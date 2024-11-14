@@ -48,7 +48,7 @@ function initializeNightCycle() {
 
 function getNightSchedule() {
     const schedule = [];
-    const now = moment.tz('Europe/Kyiv');  // Поточний час у потрібній таймзоні
+    const now = moment.tz('Europe/Kyiv');
     const cycleStart = moment.tz("2024-11-06T14:30", 'Europe/Kyiv');  // Початок початкового циклу
 
     // Зсув, який допоможе знайти найближчий нічний інтервал
