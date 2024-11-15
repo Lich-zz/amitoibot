@@ -132,7 +132,7 @@ client.once('ready', async () => {
             description: 'List all scheduled events.',
         },
 		{
-		 name: 'runamitoi',
+		 name: 'startamitoi',
             description: 'Set up an alert for the specified interval.',
             options: [
                 {
@@ -150,7 +150,7 @@ client.once('ready', async () => {
             ]
 		},
 		{
-            name: 'getamitoi',
+            name: 'amitoi',
             description: 'Get amitoy expedition time',
         }
     ];
@@ -400,7 +400,7 @@ client.on('interactionCreate', async interaction => {
     const now = moment.tz('Europe/Kyiv');
     const nightSchedule = getNightSchedule();
 	
-	if (interaction.commandName === 'runamitoi') {
+	if (interaction.commandName === 'startamitoi') {
 		const hours = interaction.options.getInteger('hours');
 		const intervalMs = hours * 60 * 60 * 1000; // Перетворюємо години в мілісекунди
 		const userId = interaction.user.id;
@@ -427,7 +427,7 @@ client.on('interactionCreate', async interaction => {
 		await interaction.reply({ content: `✅ Alert set for ${hours} hour(s)!`, ephemeral: true });
 	}
 
-	if (interaction.commandName === 'getamitoi') {
+	if (interaction.commandName === 'amitoi') {
 		const userId = interaction.user.id;
 
 		if (activeUserTimers.has(userId)) {
