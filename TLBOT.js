@@ -19,7 +19,6 @@ const bossesSchedule = [
     { hour: 14, minute: 0 },
     { hour: 17, minute: 0 },
     { hour: 21, minute: 0 },
-	{ hour: 21, minute: 30 },
     { hour: 23, minute: 0 }
 ];
 
@@ -315,7 +314,7 @@ client.on('channelDelete', channel => {
 
 // Function to check schedule and send notifications
 function checkSchedule() {
-    const now = moment.tz('Europe/Kyiv');
+    const now = moment.tz('Europe/Kyiv').startOf('minute');
 
     // Notify 5 minutes before night starts
     if (now.isSame(currentNightStart.clone().subtract(5, 'minutes'), 'minute')) {
@@ -371,10 +370,7 @@ function checkSchedule() {
         if (now.isSame(bossTime.clone().subtract(5, 'minutes'), 'minute')) {
             sendMessageToActiveChannels(`⏰ **Bosses will appear in 5 minutes!** Prepare!`);
         }
-		console.log('-------');
-		console.log(bossTime);
-		console.log(now);
-		console.log('-------');
+
         if (now.isSame(bossTime, 'minute')) {
             sendMessageToActiveChannels(`⚔️ **Bosses have appeared!** Get ready for battle!`);
         }
