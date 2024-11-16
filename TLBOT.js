@@ -99,6 +99,28 @@ client.once('ready', async () => {
 
     // Define commands
     const commands = [
+		{
+		 name: 'startamitoi',
+            description: 'Set up an alert for the specified interval.',
+            options: [
+                {
+                    name: 'hours',
+                    type: 4, // INTEGER тип
+                    description: 'Set the alert interval (1, 2, 4, or 8 hours)',
+                    required: true,
+                    choices: [
+                        { name: '1 hour', value: 1 },
+                        { name: '2 hours', value: 2 },
+                        { name: '4 hours', value: 4 },
+                        { name: '8 hours', value: 8 }
+                    ]
+                }
+            ]
+		},
+		{
+            name: 'getamitoi',
+            description: 'Get amitoy expedition time',
+        },
         {
             name: 'night',
             description: 'Check the current night status or time until next night.',
@@ -130,28 +152,6 @@ client.once('ready', async () => {
         {
             name: 'listevents',
             description: 'List all scheduled events.',
-        },
-		{
-		 name: 'startamitoi',
-            description: 'Set up an alert for the specified interval.',
-            options: [
-                {
-                    name: 'hours',
-                    type: 4, // INTEGER тип
-                    description: 'Set the alert interval (1, 2, 4, or 8 hours)',
-                    required: true,
-                    choices: [
-                        { name: '1 hour', value: 1 },
-                        { name: '2 hours', value: 2 },
-                        { name: '4 hours', value: 4 },
-                        { name: '8 hours', value: 8 }
-                    ]
-                }
-            ]
-		},
-		{
-            name: 'amitoi',
-            description: 'Get amitoy expedition time',
         }
     ];
 
@@ -159,7 +159,7 @@ client.once('ready', async () => {
     const permissions = PermissionsBitField.Flags.ManageRoles.toString();
 
     // Add permissions to the command registration
-    commands[1].default_member_permissions = permissions;
+    commands[3].default_member_permissions = permissions;
     const clientUserId = String(client.user.id); 
 
     // Register commands globally
