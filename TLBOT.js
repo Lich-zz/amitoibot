@@ -175,7 +175,7 @@ client.once('ready', async () => {
 		console.log(commands);
 		*/
 		// Очищення всіх команд (видалення всіх зареєстрованих команд)
-       // await rest.put(Routes.applicationCommands(clientUserId), { body: [] });
+        await rest.put(Routes.applicationCommands(clientUserId), { body: [] });
 
         setTimeout(async () => {
 			await rest.put(Routes.applicationCommands(clientUserId), { body: commands });
