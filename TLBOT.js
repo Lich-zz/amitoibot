@@ -25,6 +25,63 @@ const bossesSchedule = [
 let currentNightStart = null;
 let currentNightEnd = null;
 
+const localCommands = [
+    {
+        name: 'startamitoi',
+        description: 'Set up an alert for the specified interval.',
+        options: [
+            {
+                name: 'hours',
+                type: 4, // INTEGER
+                description: 'Set the alert interval (1, 2, 4, or 8 hours)',
+                required: true,
+                choices: [
+                    { name: '1 hour', value: 1 },
+                    { name: '2 hours', value: 2 },
+                    { name: '4 hours', value: 4 },
+                    { name: '8 hours', value: 8 }
+                ]
+            }
+        ]
+    },
+    {
+        name: 'getamitoi',
+        description: 'Get amitoy expedition time',
+    },
+    {
+        name: 'night',
+        description: 'Check the current night status or time until next night.',
+    },
+    {
+        name: 'addevent',
+        description: 'Add an event reminder.',
+        options: [
+            {
+                name: 'message',
+                type: 3,
+                description: 'Message to remind',
+                required: true,
+            },
+            {
+                name: 'time',
+                type: 3,
+                description: 'Event time in HH:MM (24-hour format)',
+                required: true,
+            },
+            {
+                name: 'timezone',
+                description: 'Select your timezone',
+                type: ApplicationCommandOptionType.String,
+                autocomplete: true
+            }
+        ]
+    },
+    {
+        name: 'listevents',
+        description: 'List all scheduled events.',
+    }
+];
+
 // Function to set up night intervals
 function initializeNightCycle() {
     const nightSchedule = getNightSchedule();
@@ -95,113 +152,8 @@ async function sendMessageToActiveChannels(messageContent, serverId) {
 
 // Define slash commands and their behavior
 client.once('ready', async () => {
-    console.log(`Logged in as ${client.user.tag}!`);
-
-    // Define commands
-    const commands = [
-		{
-		 name: 'startamitoi',
-            description: 'Set up an alert for the specified interval.',
-            options: [
-                {
-                    name: 'hours',
-                    type: 4, // INTEGER тип
-                    description: 'Set the alert interval (1, 2, 4, or 8 hours)',
-                    required: true,
-                    choices: [
-                        { name: '1 hour', value: 1 },
-                        { name: '2 hours', value: 2 },
-                        { name: '4 hours', value: 4 },
-                        { name: '8 hours', value: 8 }
-                    ]
-                }
-            ]
-		},
-		{
-            name: 'getamitoi',
-            description: 'Get amitoy expedition time',
-        },
-        {
-            name: 'night',
-            description: 'Check the current night status or time until next night.',
-        },
-        {
-            name: 'addevent',
-            description: 'Add an event reminder.',
-            options: [
-                {
-                    name: 'message',
-                    type: 3,
-                    description: 'Message to remind',
-                    required: true,
-                },
-                {
-                    name: 'time',
-                    type: 3,
-                    description: 'Event time in HH:MM (24-hour format) ( default timezone Europe/Kyiv GMT+1 )',
-                    required: true,
-                },
-				{
-					name: 'timezone',
-					description: 'Select your timezone',
-					type: ApplicationCommandOptionType.String,
-					autocomplete: true
-				}
-            ]
-        },
-        {
-            name: 'listevents',
-            description: 'List all scheduled events.',
-        }
-    ];
-
-    // Define permissions for commands (use .toString() to serialize the permission value)
-    const permissions = PermissionsBitField.Flags.ManageRoles.toString();
-
-    // Add permissions to the command registration
-    commands[3].default_member_permissions = permissions;
-    const clientUserId = String(client.user.id); 
-
-    // Register commands globally
-    const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
-    try {
-		/*const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
-		const commandsToDelete = await rest.get(Routes.applicationCommands(clientUserId));
-		console.log(commandsToDelete);
-		for (const command of commandsToDelete) {
-			await rest.delete(Routes.applicationCommand(clientUserId, command.id));
-		}
-		console.log('All commands deleted.');
-		console.log(commands);
-		*/
-		// Очищення всіх команд (видалення всіх зареєстрованих команд)
-        await rest.put(Routes.applicationCommands(clientUserId), { body: [] });
-
-        setTimeout(async () => {
-			await rest.put(Routes.applicationCommands(clientUserId), { body: commands });
-			console.log('Slash commands registered.');
-		}, 3000);
-        console.log('Slash commands registered.');
-    } catch (error) {
-        console.error(error);
-    }
-
-    // Initialize active channels
-   /* client.guilds.cache.forEach(guild => {
-        const channels = [];
-        guild.channels.cache.forEach(channel => {
-            if (
-                channel.isTextBased() &&
-                channel.members.has(client.user.id) &&
-                channel.permissionsFor(guild.members.me).has('SendMessages')
-            ) {
-                channels.push(channel.id);
-                activeChannels.set(guild.id, channels);
-                console.log(`Active channel set to: ${channel.name} in guild: ${guild.name}`);
-            }
-        });
-    });
-	*/
+	console.log(`Logged in as ${client.user.tag}!`);
+    await checkAndUpdateCommands();
 });
 
 // Ініціалізація активних каналів при запуску бота
@@ -517,6 +469,38 @@ client.on('interactionCreate', async interaction => {
         await interaction.reply(`📅 **Scheduled Events:**\n${eventList}`);
     }
 });
+
+// Функція для перевірки і оновлення команд
+async function checkAndUpdateCommands() {
+    const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
+	const permissions = PermissionsBitField.Flags.ManageRoles.toString();
+
+    // Add permissions to the command registration
+    localCommands[3].default_member_permissions = permissions;
+    try {
+        // Отримуємо список зареєстрованих команд
+        const registeredCommands = await rest.get(Routes.applicationCommands(client.user.id));
+        const registeredCommandNames = registeredCommands.map(cmd => cmd.name);
+
+        // Знаходимо відсутні команди
+        const missingCommands = localCommands.filter(cmd => !registeredCommandNames.includes(cmd.name));
+
+        // Додаємо відсутні команди
+        if (missingCommands.length > 0) {
+            await rest.put(Routes.applicationCommands(client.user.id), {
+                body: [...registeredCommands, ...missingCommands]
+            });
+            console.log(`Added missing commands: ${missingCommands.map(cmd => cmd.name).join(', ')}`);
+        } else {
+            console.log('No missing commands found.');
+        }
+    } catch (error) {
+        console.error('Error checking or updating commands:', error);
+    }
+}
+
+// Періодична перевірка команд кожну годину
+setInterval(checkAndUpdateCommands, 60 * 60 * 1000);
 
 // Schedule check function
 setInterval(checkSchedule, 60000);
