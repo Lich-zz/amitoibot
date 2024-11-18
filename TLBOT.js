@@ -379,7 +379,7 @@ client.on('interactionCreate', async interaction => {
 		await interaction.reply({ content: `✅ Alert set for ${hours} hour(s)!`, ephemeral: true });
 	}
 
-	if (interaction.commandName === 'amitoi') {
+	if (interaction.commandName === 'getamitoi') {
 		const userId = interaction.user.id;
 
 		if (activeUserTimers.has(userId)) {
