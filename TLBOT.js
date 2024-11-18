@@ -55,6 +55,7 @@ const localCommands = [
     {
         name: 'addevent',
         description: 'Add an event reminder.',
+		default_member_permissions: PermissionsBitField.Flags.ManageRoles.toString(), // Додаємо обмеження   
         options: [
             {
                 name: 'message',
@@ -426,6 +427,13 @@ client.on('interactionCreate', async interaction => {
     }
 
     if (interaction.commandName === 'addevent') {
+		if (!interaction.member.permissions.has(PermissionsBitField.Flags.ManageRoles)) {
+			await interaction.reply({
+				content: '❌ You do not have permission to use this command.',
+				ephemeral: true,
+			});
+			return;
+		}
         const eventMessage = interaction.options.getString('message');
         const eventTime = interaction.options.getString('time');
 		const eventTimeZone = interaction.options.getString('timezone') || 'Europe/Kyiv';
@@ -473,10 +481,7 @@ client.on('interactionCreate', async interaction => {
 // Функція для перевірки і оновлення команд
 async function checkAndUpdateCommands() {
     const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
-	const permissions = PermissionsBitField.Flags.ManageRoles.toString();
 
-    // Add permissions to the command registration
-    localCommands[3].default_member_permissions = permissions;
     try {
         // Отримуємо список зареєстрованих команд
         const registeredCommands = await rest.get(Routes.applicationCommands(client.user.id));
