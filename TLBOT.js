@@ -1,6 +1,8 @@
 const { Client, GatewayIntentBits, REST, Routes, PermissionsBitField, ApplicationCommandOptionType } = require('discord.js');
 const moment = require('moment-timezone');
 require('dotenv').config();
+const axios = require('axios');
+const cheerio = require('cheerio');
 
 const client = new Client({
     intents: [
@@ -14,6 +16,9 @@ const client = new Client({
 const activeChannels = new Map();
 const serverEvents = new Map();
 const activeUserTimers = new Map();
+let lastServerStatus = '';
+let serverStatusDelay = 5;
+let serverStatus = 1;
 const bossesSchedule = [
     { hour: 2, minute: 0 },
     { hour: 14, minute: 0 },
@@ -155,6 +160,7 @@ async function sendMessageToActiveChannels(messageContent, serverId) {
 client.once('ready', async () => {
 	console.log(`Logged in as ${client.user.tag}!`);
     await checkAndUpdateCommands();
+	initializeActiveChannels();
 });
 
 // Ініціалізація активних каналів при запуску бота
@@ -176,12 +182,6 @@ function initializeActiveChannels() {
         }
     });
 }
-
-// Виклик функції ініціалізації під час запуску бота
-client.once('ready', () => {
-    console.log(`Logged in as ${client.user.tag}!`);
-    initializeActiveChannels();
-});
 
 // Оновлення activeChannels при додаванні бота до нової гільдії
 client.on('guildCreate', guild => {
@@ -269,6 +269,25 @@ client.on('channelDelete', channel => {
 function checkSchedule() {
     const now = moment.tz('Europe/Kyiv').startOf('minute');
 
+// Check for events and notify
+    serverEvents.forEach((events, serverId) => {
+        events.forEach((event, index) => {
+            const eventTimeInUserTZ = moment.tz(event.time, 'Europe/Kyiv');
+
+            // Notify 5 minutes before the event
+            if (now.isSame(eventTimeInUserTZ.clone().subtract(5, 'minutes'), 'minute')) {
+                sendMessageToActiveChannels(`🔔 "${event.message}" will start in 5 minutes!`, serverId);
+            }
+
+            if (now.isSame(eventTimeInUserTZ, 'minute')) {
+                sendMessageToActiveChannels(`🔔 "${event.message}" Starting Now!`, serverId);
+                serverEvents.get(serverId).splice(index, 1);
+            }
+        });
+    });
+	
+	if (!serverStatus) return;
+	
     // Notify 5 minutes before night starts
     if (now.isSame(currentNightStart.clone().subtract(5, 'minutes'), 'minute')) {
         sendMessageToActiveChannels('⏰ **Night starts in 5 minutes!** Be careful!');
@@ -293,23 +312,6 @@ function checkSchedule() {
             }
         }
     }
-
-    // Check for events and notify
-    serverEvents.forEach((events, serverId) => {
-        events.forEach((event, index) => {
-            const eventTimeInUserTZ = moment.tz(event.time, 'Europe/Kyiv');
-
-            // Notify 5 minutes before the event
-            if (now.isSame(eventTimeInUserTZ.clone().subtract(5, 'minutes'), 'minute')) {
-                sendMessageToActiveChannels(`🔔 "${event.message}" will start in 5 minutes!`, serverId);
-            }
-
-            if (now.isSame(eventTimeInUserTZ, 'minute')) {
-                sendMessageToActiveChannels(`🔔 "${event.message}" Starting Now!`, serverId);
-                serverEvents.get(serverId).splice(index, 1);
-            }
-        });
-    });
 
     // Boss appearance notifications
     bossesSchedule.forEach((boss) => {
@@ -478,6 +480,47 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
+// Функція для перевірки статусу сервера
+async function checkServerStatus() {
+    try {
+        const response = await axios.get('https://www.playthroneandliberty.com/en-us/support/server-status');
+        const html = response.data;
+        const $ = cheerio.load(html);
+
+        const elements = $('.ags-ServerStatus-content-serverStatuses-server-item-label');
+
+        // Шукаємо елемент, що містить слово "Justice"
+        let serverStatus = '';
+        elements.each((i, el) => {
+            const text = $(el).text().trim();
+            if (text.includes('Justice')) {
+                serverStatus = $(el).attr('aria-label');
+                return false; // Зупиняємо цикл, коли знаходимо перший збіг
+            }
+        });
+        // Перевіряємо, чи статус змінився
+        if (serverStatus && serverStatus !== lastServerStatus) {
+            // Ваша функція для відправлення повідомлення, наприклад, у Discord:
+            sendMessageToActiveChannels(`🔔 New server status: ${serverStatus}`);
+
+            // Оновлюємо попередній статус
+            lastServerStatus = serverStatus;
+        } else {
+           // console.log('Server status stay as :' + serverStatus);
+        }
+
+		if (lastServerStatus.includes('Maintenance')) {
+			serverStatusDelay = 5;
+			serverStatus = 0;
+		} else {
+			serverStatusDelay = 60;
+			serverStatus = 0;
+		}
+    } catch (error) {
+        console.error('Error server Status:', error);
+    }
+}
+
 // Функція для перевірки і оновлення команд
 async function checkAndUpdateCommands() {
     const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
@@ -509,5 +552,8 @@ setInterval(checkAndUpdateCommands, 60 * 60 * 1000);
 
 // Schedule check function
 setInterval(checkSchedule, 60000);
+
+// Виклик функції з інтервалом, наприклад, кожні 5/60 хвилин
+setInterval(checkServerStatus, serverStatusDelay * 60 * 1000);
 
 client.login(process.env.TOKEN);
