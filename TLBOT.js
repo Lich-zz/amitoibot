@@ -286,7 +286,7 @@ function checkSchedule() {
         });
     });
 	
-	if (!globalServerStatus) return;
+	if (globalServerStatus == 0) return;
 	
     // Notify 5 minutes before night starts
     if (now.isSame(currentNightStart.clone().subtract(5, 'minutes'), 'minute')) {
