@@ -18,7 +18,7 @@ const serverEvents = new Map();
 const activeUserTimers = new Map();
 let lastServerStatus = '';
 let serverStatusDelay = 5;
-let serverStatus = 1;
+let globalServerStatus = 1;
 const bossesSchedule = [
     { hour: 2, minute: 0 },
     { hour: 14, minute: 0 },
@@ -286,7 +286,7 @@ function checkSchedule() {
         });
     });
 	
-	if (!serverStatus) return;
+	if (!globalServerStatus) return;
 	
     // Notify 5 minutes before night starts
     if (now.isSame(currentNightStart.clone().subtract(5, 'minutes'), 'minute')) {
@@ -511,10 +511,10 @@ async function checkServerStatus() {
 
 		if (lastServerStatus.includes('Maintenance')) {
 			serverStatusDelay = 5;
-			serverStatus = 0;
+			globalServerStatus = 0;
 		} else {
 			serverStatusDelay = 60;
-			serverStatus = 0;
+			globalServerStatus = 1;
 		}
     } catch (error) {
         console.error('Error server Status:', error);
