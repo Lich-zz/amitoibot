@@ -20,11 +20,11 @@ let lastServerStatus = '';
 let serverStatusDelay = 5;
 let globalServerStatus = 1;
 const bossesSchedule = [
-    { hour: 2, minute: 0 },
-    { hour: 14, minute: 0 },
-    { hour: 17, minute: 0 },
-    { hour: 21, minute: 0 },
-    { hour: 23, minute: 0 }
+    { hour: 3, minute: 0 },
+    { hour: 15, minute: 0 },
+    { hour: 18, minute: 0 },
+    { hour: 22, minute: 0 },
+    { hour: 00, minute: 0 }
 ];
 
 let currentNightStart = null;
