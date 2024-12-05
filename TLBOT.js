@@ -429,13 +429,14 @@ client.on('interactionCreate', async interaction => {
     }
 
     if (interaction.commandName === 'addevent') {
-		if (!interaction.member.permissions.has(PermissionsBitField.Flags.ManageRoles)) {
+		/*if (!interaction.member.permissions.has(PermissionsBitField.Flags.ManageRoles)) {
 			await interaction.reply({
 				content: '❌ You do not have permission to use this command.',
 				ephemeral: true,
 			});
 			return;
 		}
+		*/
         const eventMessage = interaction.options.getString('message');
         const eventTime = interaction.options.getString('time');
 		const eventTimeZone = interaction.options.getString('timezone') || 'Europe/Kyiv';
