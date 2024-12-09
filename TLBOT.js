@@ -112,7 +112,7 @@ function initializeNightCycle() {
 function getNightSchedule() {
     const schedule = [];
     const now = moment.tz('Europe/Kyiv');
-    const cycleStart = moment.tz("2024-12-05T18:30", 'Europe/Kyiv');  // Початок початкового циклу
+    const cycleStart = moment.tz("2024-12-05T16:00", 'Europe/Kyiv');  // Початок початкового циклу
 
     // Зсув, який допоможе знайти найближчий нічний інтервал
     let nightStart = cycleStart;
@@ -138,7 +138,8 @@ initializeNightCycle();
 async function sendMessageToActiveChannels(messageContent, serverId) {
     activeChannels.forEach((channels, guildId) => {
         channels.forEach((channelId) => {
-            if (serverId && channelId !== serverId) {
+
+            if (serverId && guildId !== serverId) {
                 return;
             }
 
@@ -289,17 +290,17 @@ function checkSchedule() {
 	if (globalServerStatus == 0) return;
 	
     // Notify 5 minutes before night starts
-    if (now.isSame(currentNightStart.clone().subtract(5, 'minutes'), 'minute')) {
+   /* if (now.isSame(currentNightStart.clone().subtract(5, 'minutes'), 'minute')) {
         sendMessageToActiveChannels('⏰ **Night starts in 5 minutes!** Be careful!');
-    }
+    }*/
 
     // Notify when night starts
-    if (now.isSame(currentNightStart, 'minute')) {
+   /* if (now.isSame(currentNightStart, 'minute')) {
         sendMessageToActiveChannels('🌙 **Night has started!** Be careful!');
-    }
+    }*/
 
     // Notify when night ends
-    if (now.isSame(currentNightEnd, 'minute')) {
+   /* if (now.isSame(currentNightEnd, 'minute')) {
         sendMessageToActiveChannels('🌅 **The night is over!** You are safe again.');
 
         // Update to the next night in the schedule
@@ -312,7 +313,7 @@ function checkSchedule() {
             }
         }
     }
-
+*/
     // Boss appearance notifications
     bossesSchedule.forEach((boss) => {
         let bossTime = moment.tz({ hour: boss.hour, minute: boss.minute }, 'Europe/Kyiv');
@@ -437,6 +438,7 @@ client.on('interactionCreate', async interaction => {
 			return;
 		}
 		*/
+
         const eventMessage = interaction.options.getString('message');
         const eventTime = interaction.options.getString('time');
 		const eventTimeZone = interaction.options.getString('timezone') || 'Europe/Kyiv';
@@ -454,8 +456,8 @@ client.on('interactionCreate', async interaction => {
 
         const eventDateTime = moment.tz(`${eventTime}`, 'HH:mm', eventTimeZone);
 
-        if (!serverEvents.has(interaction.channelId)) {
-            serverEvents.set(interaction.channelId, []);
+        if (!serverEvents.has(interaction.guildId)) {
+            serverEvents.set(interaction.guildId, []);
         }
 
         const event = {
@@ -464,13 +466,13 @@ client.on('interactionCreate', async interaction => {
             timeZone: eventTimeZone, 
         };
 
-        serverEvents.get(interaction.channelId).push(event);
-		sendMessageToActiveChannels(`✅ Event "${event.message}" scheduled at ${eventDateTime.format('HH:mm')} (${eventTimeZone}).`, interaction.channelId);
+        serverEvents.get(interaction.guildId).push(event);
+		sendMessageToActiveChannels(`✅ Event "${event.message}" scheduled at ${eventDateTime.format('HH:mm')} (${eventTimeZone}).`, interaction.guildId);
 		await interaction.reply(`✅ Event "${event.message}" scheduled at ${eventDateTime.format('HH:mm')} (${eventTimeZone}).`);
     }
 
     if (interaction.commandName === 'listevents') {
-        const events = serverEvents.get(interaction.channelId);
+        const events = serverEvents.get(interaction.guildId);
         if (!events || events.length === 0) {
             await interaction.reply('📅 **No scheduled events.**');
             return;
