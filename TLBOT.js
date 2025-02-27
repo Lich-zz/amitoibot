@@ -492,11 +492,11 @@ async function checkServerStatus() {
 
         const elements = $('.ags-ServerStatus-content-serverStatuses-server-item-label');
 
-        // Шукаємо елемент, що містить слово "Justice"
+        // Шукаємо елемент, що містить слово "Fortune"
         let serverStatus = '';
         elements.each((i, el) => {
             const text = $(el).text().trim();
-            if (text.includes('Justice')) {
+            if (text.includes('Fortune')) {
                 serverStatus = $(el).attr('aria-label');
                 return false; // Зупиняємо цикл, коли знаходимо перший збіг
             }
